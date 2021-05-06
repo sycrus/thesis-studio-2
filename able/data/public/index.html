@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ESP32 A-frame ARjs</title>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <!--AR.js Marker Tracking -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- Aframe HTML Shader script -->
+  <script src="https://unpkg.com/aframe-html-shader@0.2.0/dist/aframe-html-shader.min.js"></script>
+  <!-- Annyang -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/2.5.0/annyang.min.js"></script>
+  <script src="https://cdn.rawgit.com/lmalave/aframe-speech-command-component/master/dist/aframe-speech-command-component.min.js"></script>
+  <!-- Look At-->
+  <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+  <!-- Meshline -->
+  <script src="https://raw.githack.com/andreasplesch/aframe-meshline-component/master/dist/aframe-meshline-component.min.js"></script>
+  <script type="text/javascript" src="./smoothie.js"></script>
+  <script type="text/javascript" src="./dataDisplay.js"></script>
+  <script type="text/javascript" src="./components.js"></script>
+  <script type="text/javascript" src="./cursor.js" defer></script>
+</head>
+
+<body style="margin : 0px; overflow: hidden;">
+  <a-scene embedded artoolkit vr-mode-ui="enabled: false" arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; maxDetectionRate: 60;debugUIEnabled: false;">
+    <a-assets>
+      <audio id="parts" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/5cb9d774da00534cb3c5765ba36ecee95a8d2147/assets/voices/parts2.m4a" preload="auto" crossorigin></audio>
+      <audio id="power1" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/855c8ac2230760197bd01ce575c25034ba9e25ad/assets/voices/power1.mp3" preload="auto" crossorigin></audio>
+      <audio id="power2" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/c1097e579b968b08998c80d632714284b0b32f54/assets/voices/power2.mp3" preload="auto" crossorigin></audio>
+      <audio id="potentiometer" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/potentiometer.m4a" preload="auto" crossorigin></audio>
+      <audio id="pot1" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/pot1.mp3" preload="auto" crossorigin></audio>
+      <audio id="pot2" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/pot2.mp3" preload="auto" crossorigin></audio>
+      <audio id="pot3" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/pot3.mp3" preload="auto" crossorigin></audio>
+      <audio id="servo" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/servo.m4a" preload="auto" crossorigin></audio>
+      <audio id="servo1" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/servo1.mp3" preload="auto" crossorigin></audio>
+      <audio id="servo2" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/servo2.mp3" preload="auto" crossorigin></audio>
+      <audio id="servo3" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/voices/servo3.mp3" preload="auto" crossorigin></audio>
+    </a-assets>
+
+    <a-marker id="diagramMarkerB" preset="custom" type="pattern" url="https://rawcdn.githack.com/sycrus/thesis-studio-2/ab696b315bc4cc2a006bd4bdfbaf94136366d76c/assets/markers/patt/pattern-b.patt" >
+      <a-image id="side" scale="1 1 1"   position="0 0 0" rotation="-90 0 0" material="alphaTest: 0.5" crossorigin="anonymous"></a-image>
+    </a-marker>
+
+    <a-marker id="instructionMarkerA" preset="custom" type="pattern" url="https://rawcdn.githack.com/sycrus/thesis-studio-2/ab696b315bc4cc2a006bd4bdfbaf94136366d76c/assets/markers/patt/pattern-a.patt" markerhandler >
+        <a-entity id="annyang" annyang-speech-recognition></a-entity>
+
+        <a-plane id="instructionPanel" position="0.05 0.1 -0.02" width="1.6" height="1.6" rotation="-90 0 0" color="#fce38a"
+                 sound="on: click; volume: 0.8" class="clickable" crossorigin="anonymous">
+           <a-text id="stepNumber" position="-0.6 0.5 0.2" color="#2b2e4a" scale="0.6 0.6 0.6"  rotation="0 0 0" width="2" height="2" anchor="left" wrap-count="12"  negate="false"
+                value="0" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+            ></a-text>
+           <a-text id="instructionText" position="-0.6 -0.05 0.2" color="#2b2e4a" scale="0.7 0.7 0.7"  rotation="0 0 0" width="2" height="2" anchor="left" wrap-count="15"  negate="false"
+                value="Default Instructions" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+            ></a-text>
+        </a-plane>
+
+        <a-entity id="board"      position="1 0.1 -2.26" scale="0.34 0.34 0.34" >
+          <a-entity id="leftPins" position="0.05 0 0.25" rotation="0 0 0" scale="1 1 1">
+
+            <a-entity id="EN" position="-1.25 0.02 -2.1" rotation="0 -90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show e n; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide e n; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="pENtext" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                          value="EN" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D36" position="-1.25 0.02 -1.8"  rotation="0 -90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 36; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 36; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+              <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+              <a-text id="p36text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                      value="36" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+              ></a-text>
+            </a-entity>
+
+            <a-entity id="D39" position="-1.25 0.02 -1.5"  rotation="0 -90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 39; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 39; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p39text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                          value="39" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D34" position="-1.25 0.02 -1.2"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 34; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 34; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p34text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="34" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D35" position="-1.25 0.02 -0.9"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 35; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 35; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p35text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="35" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D32" position="-1.25 0.02 -0.6"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 32; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 32; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p32text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="32" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+             <a-entity id="D33" position="-1.25 0.02 -0.3"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 33; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 33; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p33text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="33" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+             <a-entity id="D25" position="-1.25 0.02 -0.0"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 25; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 25; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p25text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="25" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D26" position="-1.25 0.02 0.3"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 26; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 26; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p26text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="26" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D27" position="-1.25 0.02 0.6"  rotation="0 -90 0" >
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 27; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 27; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p27text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="27" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D14" position="-1.25 0.02 0.9" rotation="0 -90 0" >
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 14; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 14; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p14text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="14" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D12" position="-1.25 0.02 1.2"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 12; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 12; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p12text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="12" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D13" position="-1.25 0.02 1.5"  rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 13; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 13; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p13text" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="13" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="leftGnd" position="-1.25 0.02 1.8" rotation="0 -90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#2b2e4a"
+                      speech-command__show="command: show left Ground; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide left Ground; type: attribute; attribute: color; value: #2b2e4a"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#2b2e4a"></a-box>
+                <a-text id="plGndtext" position="-0.05 0.12 -0.1" color="white" scale="0.9 0.9 0.9"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="Gnd" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="Vin" position="-1.25 0.02 2.1"  rotation="0 -90 0" >
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="red"
+                      speech-command__show="command: show V in; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide V in; type: attribute; attribute: color; value: red"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="red"></a-box>
+                <a-text id="pVintext" position="-0.05 0.12 -0.1" color="#2b2e4a" scale="1 1 1"  rotation="-90 90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="Vin" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+          </a-entity>
+
+          <a-entity id="rightPins" position="0.3 0 0.25" rotation="0 0 0" scale="1 1 1">
+
+            <a-entity id="23" position="1.75 -0.02 -2.1" rotation="0 90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 23; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 23; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                  <a-text id="p23text" position="0.05 0.12 -0.32" color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                          value="23" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D22" position="1.75 -0.02 -1.8" rotation="0 90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 22; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 22; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                  <a-text id="p22text" position="0.05 0.12 -0.32" color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                          value="22" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D1" position="1.75 -0.02 -1.5" rotation="0 90 0" >
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 1; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 1; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                  <a-text id="p1text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                          value="1" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D3" position="1.75 -0.02 -1.2" rotation="0 90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 3; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 3; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p3text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="3" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D21" position="1.75 -0.02 -0.9" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 21; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 21; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p21text" position="0.05 0.12 -0.32" color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="21" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D19" position="1.75 -0.02 -0.6" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 19; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 19; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p19text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="19" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+             <a-entity id="D18" position="1.75 -0.02 -0.3" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 18; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 18; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p18text" position="0.05 0.12 -0.32" color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="18" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+             <a-entity id="D5" position="1.75 -0.02 -0.0" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 5; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 5; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p5text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="5" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D17" position="1.75 -0.02 0.3" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 17; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 17; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"></a-box>
+                <a-text id="p17text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="17" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D16" position="1.75 -0.02 0.6" rotation="0 90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 16; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 16; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p16text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="16" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D4" position="1.75 -0.02 0.9" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 4; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 4; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p4text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="4" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D2" position="1.75 -0.02 1.2" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 2; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 2; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p2text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="2" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="D15" position="1.75 -0.02 1.5" rotation="0 90 0">
+               <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#eaffd0"
+                      speech-command__show="command: show 15; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 15; type: attribute; attribute: color; value: #eaffd0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#eaffd0"
+                      ></a-box>
+                <a-text id="p15text" position="0.05 0.12 -0.32"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="15" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="rightGnd" position="1.75 -0.02 1.8" rotation="0 90 0">
+                <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#2b2e4a"
+                      speech-command__show="command: show right Ground; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide right Ground; type: attribute; attribute: color; value: #2b2e4a"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#2b2e4a"
+                      ></a-box>
+                <a-text id="prGndtext" position="0.07 0.12 -0.45"  color="white" scale="0.9 0.9 0.9"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="Gnd" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+            <a-entity id="3V3" position="1.75 -0.02 2.1" rotation="0 90 0">
+              <a-cylinder segments-radial="3" height="0.06" radius="0.15" color="#ff75a0"
+                      speech-command__show="command: show 3 V 3; type: attribute; attribute: color; value: lightgreen;"
+                      speech-command__hide="command: hide 3 V 3; type: attribute; attribute: color; value: #ff75a0"> </a-cylinder>
+                <a-box position="0 0 -0.28 " width="0.435" height="0.06" depth="0.256" rotation="0 -90 0" color="#ff75a0"
+                      ></a-box>
+                <a-text id="p3V3text" position="0.05 0.12 -0.45"  color="#2b2e4a" scale="1 1 1"  rotation="-90 -90 0" width="1.5" height="1.5" anchor="left" wrap-count="12"  negate="false"
+                        value="3v3" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            </a-entity>
+
+          </a-entity>
+        </a-entity>
+
+        <a-plane id="topBoard" position="1.17 0 -3.3" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/8c6bda01ed0f79980c7539e50c4d4a090ef54568/assets/images/overlay/a_top.png" width="3.3" height="0.35" rotation="-90 0 0"></a-plane>
+        <a-plane id="bottomBoard" position="1.17 0 -1.02" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/8c6bda01ed0f79980c7539e50c4d4a090ef54568/assets/images/overlay/a_bottom.png" width="3.3" height="0.35" rotation="-90 0 0"></a-plane>
+
+        <a-image id="boardLeft"  position="0.05 0 -2.18" scale="0.348 0.348 0.348"    width="3.79" height="5.14"  rotation="-90 0 0" material="alphaTest: 0.5" crossorigin="anonymous"></a-image>
+        <a-image id="boardRight" position="2.26 0 -2.18" scale="0.348 0.348 0.348"    width="3.79" height="5.14"  rotation="-90 0 0" material="alphaTest: 0.5" crossorigin="anonymous"></a-image>
+    </a-marker>
+
+    <a-marker id="modelMarkerL" preset="custom" type="pattern" url="https://rawcdn.githack.com/sycrus/thesis-studio-2/ab696b315bc4cc2a006bd4bdfbaf94136366d76c/assets/markers/patt/pattern-l.patt" >
+        <a-plane id="modelPanel" position="0 0 0" scale="1.6 1.6 1.6"  width="1" height="1" material="color: #f0739d" rotation="-90 0 0"  visible="true"></a-plane>
+
+         <a-gltf-model id="servoModel" visible="false" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/models/servo.glb" rotation="0 90 0" position="0.5 0 0"  scale="0.05 0.05 0.05" >
+          <a-sphere id="sbullet1" color="orange" position="3.2 4 -35" radius="2" >
+             <a-entity meshline="lineWidth: 5; path: 0 0 0, 3 -1 -12; color: orange"></a-entity>
+             <a-plane id="sb1_back" position="3 0 -12" scale="1 1 1"  width="15" height="5" material="color: orange" rotation="-90 0 0"  visible="true" look-at="#player">
+               <a-box id="sb1_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #servo3; on: click" class="clickable"></a-box>
+                   <a-text id="sb1_text" visible="true" width="1" color="#2b2e4a" scale="15 15 15" wrap-count="6"  negate="false"  class="not-clickable"
+                          material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                    value="-> D18" position="-6 0.8 10"
+                  ></a-text>
+               </a-plane>
+            </a-sphere>
+
+             <a-sphere id="sbullet2" color="red" position="-3.2 4 -35" radius="2">
+               <a-entity meshline="lineWidth: 5; path: 0 0 0, 0 -1 -12; color: red" ></a-entity>
+               <a-plane id="sb2_back" position="0 0 -12" scale="1 1 1"  width="15" height="5" material="color: red" rotation="-90 0 0"  visible="true" look-at="#player">
+                   <a-box id="sb2_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #servo2; on: click" class="clickable"></a-box>
+                   <a-text id="sb2_text" visible="true" width="1" color="white" scale="15 15 15" wrap-count="6"  negate="false"
+                          material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                    value="-> 5V" position="-6 0.8 10"
+                  ></a-text>
+               </a-plane>
+            </a-sphere>
+          <a-sphere id="sbullet3" color="saddlebrown" position="-9.6 4 -35" radius="2">
+              <a-entity meshline="lineWidth: 5; path: 0 0 0, -3 -1 -12; color: saddlebrown"></a-entity>
+               <a-plane id="sb3_back" position="-3 0 -12" scale="1 1 1"  width="15" height="5" material="color: saddlebrown" rotation="-90 0 0"  visible="true" look-at="#player">
+                   <a-box id="sb3_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #servo1; on: click" class="clickable"></a-box>
+                   <a-text id="sb3_text" visible="true" width="1" color="#2b2e4a" scale="15 15 15" wrap-count="6"  negate="false"
+                          material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                    value="-> Gnd" position="-6 0.8 10"
+                  ></a-text>
+               </a-plane>
+            </a-sphere>
+
+          </a-gltf-model>
+
+         <a-entity rotation="0 180 0">
+           <a-gltf-model id="potModel" visible="false" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/149492ba40c0a8267e6b030203496bc77ab04154/assets/models/potentiometer.glb" rotation="0 -90 0" position="-1.6 0 -2.5"  scale="0.05 0.05 0.05" >
+            <a-sphere id="pbullet1" color="hotpink" position="45 6.5 -17" radius="2" >
+               <a-entity meshline="lineWidth: 5; path: 0 0 0, -5 -1 12; color: hotpink"></a-entity>
+               <a-plane id="pb1_back" position="-5 0 15" scale="1 1 1"  width="15" height="5" material="color: hotpink" rotation="-90 0 0"  visible="true" look-at="#player" >
+                     <a-box id="pb1_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #pot1; on: click" class="clickable"></a-box>
+                     <a-text id="pb1_text" visible="true" width="1" color="#2b2e4a" scale="12 12 12" wrap-count="6"  negate="false"
+                            material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                      value="-> 3.3V" position="-6 0.8 10"
+                    ></a-text>
+                 </a-plane>
+              </a-sphere>
+
+               <a-sphere id="pbullet2" color="lime" position="50 6.5 -17" radius="2" >
+                 <a-entity meshline="lineWidth: 5; path: 0 0 0, 0 -1 12; color: lime" ></a-entity>
+                 <a-plane id="pb2_back" position="0 0 15" scale="1 1 1"  width="15" height="5" material="color: lime" rotation="-90 0 0"  visible="true" look-at="#player">
+                     <a-box id="pb2_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #pot2; on: click" class="clickable"></a-box>
+                     <a-text id="pb2_text" visible="true" width="1" color="#2b2e4a" scale="12 12 12" wrap-count="6"  negate="false"
+                            material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                      value="-> D35" position="-6 0.8 10"
+                    ></a-text>
+                 </a-plane>
+              </a-sphere>
+            <a-sphere id="pbullet3" color="#2b2e4a" position="55 6.5 -17" radius="2" >
+                <a-entity meshline="lineWidth: 5; path: 0 0 0, 5 -1 12; color: #2b2e4a"></a-entity>
+                 <a-plane id="pb3_back" position="5 0 15" scale="1 1 1"  width="15" height="5" material="color: #2b2e4a" rotation="-90 0 0"  visible="true" look-at="#player">
+                   <a-box id="pb3_button" visible="false" position="0 0 12" width="15" height="5" depth="5" sound="src: #pot3; on: click" class="clickable"></a-box>
+                     <a-text id="pb3_text" visible="true" width="1" color="white" scale="12 12 12" wrap-count="6"  negate="false"
+                            material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+                      value="-> Gnd" position="-6 0.8 10"
+                    ></a-text>
+                 </a-plane>
+              </a-sphere>
+
+            </a-gltf-model>
+         </a-entity>
+    </a-marker>
+
+    <a-marker id="dataMarkerE" preset="custom" type="pattern" url="https://rawcdn.githack.com/sycrus/thesis-studio-2/ab696b315bc4cc2a006bd4bdfbaf94136366d76c/assets/markers/patt/pattern-e.patt">
+      <<a-plane color="#95e1d3" width="1.5" height="1.5" rotation="-90 0 0"></a-plane>
+      <a-entity scale="1.5 1.5 1.5">
+        <a-entity position="0 0 0" rotation="-90 0 0">
+          <!-- <a-text id="topText"  value="2" align="center" color= "black"> </a-text> -->
+          <a-entity id="chart" position="0 0.2 0">
+            <a-text id="chartText" position="0.02 -0.25 0.1" color="#2b2e4a" scale="0.5 0.5 0.5"  width="2" height="2" anchor="center"  align="center" wrap-count="15"  negate="false"
+                 value="D18" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"
+            ></a-text>
+            <a-entity geometry="primitive: plane; width: 1; height: 0.5" position="0 0 0.1" scale="0.8 0.8 1" material="shader: html; target: #htmlTarget; fps: 10; width:400; height: 200"></a-entity>
+          </a-entity>
+
+          <a-entity id="analog" position="-0.25 -0.25 0" scale="0.5 0.5 0.5">
+            <a-text id="analogValueText" position="0 0 0.1" scale="0.5 0.5 0.5" color="#2b2e4a" width="2" height="2" anchor="center" wrap-count="15"  align="center" negate="false"
+                 value="69" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            <a-text id="analogPinText" position="0 -0.27 0.1" scale="0.7 0.7 0.7" color="#2b2e4a" width="2" height="2" anchor="center" align="center" wrap-count="15"  negate="false"
+                 value="D35" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"></a-text>
+            <a-entity id="analogDial" rotation="0 180 -45" position="0 0 0.1" material="color:#f0739d; side: double" geometry="primitive: ring; radiusInner: 0.20; radiusOuter: 0.30; thetaStart:0; thetaLength: 120;"></a-entity>
+            <a-entity id="analogDialBack" rotation="0 0 -45" position="0 0 0.08" material="color: #2b2e4a" geometry="primitive: ring; radiusInner: 0.20; radiusOuter: 0.30; thetaStart:0; thetaLength: 150"></a-entity>
+          </a-entity>
+
+          <a-entity id="digital" position="0.25 -0.25 0" scale="0.5 0.5 0.5">
+            <!-- <a-text id="digitalValueText" position="0 0 0" scale="0.5 0.5 0.5" color="#2b2e4a" width="2" height="2" anchor="center" wrap-count="15"  negate="false"
+                 value="0" material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"> </a-text> -->
+            <a-text id="digitalPinText" position="0 -0.27 0.1" scale="0.7 0.7 0.7" color="#2b2e4a" width="2" height="2" align="center" color="black"
+                value="D12"   anchor="center" wrap-count="15"  negate="false"
+                material="alphaTest: 0.5" font="https://rawcdn.githack.com/sycrus/thesis-studio-2/9aaca3d094f749c372782e6d9f72e2ff889424ce/assets/fonts/SpaceGrotesk-Bold-msdf/SpaceGrotesk-Bold-msdf.json"> </a-text>
+            <a-entity id="digitalDial" rotation="0 180 -45" position="0 0.05 0.05" material="color:#2b2e4a" geometry="primitive: sphere; radius: 0.25"></a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+</a-marker>
+
+  <a-entity id="player" camera position="0 0 0" >
+    <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable; useWorldCoordinates: false;"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <!-- HTML to render as a material. -->
+  <div style="width: 100%; height: 100%; position: fixed; left: 0; top: 0; z-index: -2; overflow: hidden">
+    <div id="htmlTarget">
+      <canvas id="my-canvas" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <div style="position: fixed; top: 0px; width:100%; text-align: center;z-index: 1;">
+       <img id="prevButton" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/600032a246af2b25f6442f977faf6a04ef9d4461/assets/images/overlays/a_previous.png"
+            style="position: fixed; max-width: 5%; top: 50%; left: 8%; transform: translate(-50%, -50%);">
+       <img id="nextButton" src="https://rawcdn.githack.com/sycrus/thesis-studio-2/600032a246af2b25f6442f977faf6a04ef9d4461/assets/images/overlays/a_next.png"
+            style="position: fixed; max-width: 5%; top: 50%; right: 0%; transform: translate(-50%, -50%);">
+     </div>
+</body>
+
+</html>
