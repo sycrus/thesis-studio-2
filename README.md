@@ -3,7 +3,7 @@ Repo for TS2 at MFADT, Parsons School of Design
 
 
 ## Credits for resources used: ##
-###Tinkercad:###
+### Tinkercad: ###
 Jos Luijten - Potentiometer
 [https://www.tinkercad.com/things/1xsBVAIaZuR-potentiometer](https://www.tinkercad.com/things/1xsBVAIaZuR-potentiometer)
 
